@@ -10,9 +10,16 @@
 ## Compilation
 
 ```
+mkdir build
 cd build
 cmake ..
 make -j4
 ```
 
 The compare_MD executable will be placed in the `build/bin` folder.
+
+## Notes
+
+* We do not subtract the cut-off energy
+* The RNG seed is set so that all results are reproducible.
+
