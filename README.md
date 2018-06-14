@@ -22,5 +22,7 @@ At the end of the compilation stage the `compare_MD` executable can be found in 
 
 ## Notes
 
-* We do not subtract the cut-off energy
+* We do not subtract the cut-off energy.
 * The RNG seed is set to a constant so that all results are reproducible.
+* There are few to no checks on what the CUDA functions return. 
+

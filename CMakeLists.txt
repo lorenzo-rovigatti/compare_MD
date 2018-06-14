@@ -49,6 +49,7 @@ SET(compare_MD_SOURCES
 	src/main.cpp
 	src/CPU.cpp
 	src/utils.cpp
+	src/interaction.cpp
 )
 
 ADD_EXECUTABLE(compare_MD ${compare_MD_SOURCES})
@@ -60,8 +61,9 @@ IF(CUDA_FOUND)
 
 	SET(compare_MD_CUDA_SOURCES
 	src/CUDA.cu
+	src/CUDA_device_utils.cu
 	)
 
-	CUDA_ADD_EXECUTABLE(compare_MD_CUDA ${compare_MD_SOURCES} ${compare_MD_CUDA_SOURCES})
+	CUDA_ADD_EXECUTABLE(compare_MD_CUDA ${compare_MD_SOURCES} ${compare_MD_CUDA_SOURCES} OPTIONS -DCUDA)
 	TARGET_COMPILE_DEFINITIONS(compare_MD_CUDA PUBLIC CUDA)
 ENDIF(CUDA_FOUND)

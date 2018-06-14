@@ -10,7 +10,6 @@
 
 #include "defs.h"
 
-int LJ_interaction(number r_sqr, number *energy, number *force_module_over_r);
 void CPU_first_step(MD_system *syst);
 void CPU_force_calculation(MD_system *syst);
 void CPU_thermalise(MD_system *syst);

@@ -49,6 +49,9 @@ typedef struct {
 	vector *d_positions;
 	vector *d_velocities;
 	vector *d_forces;
+	int kernel_threads_per_block;
+	dim3 kernel_blocks;
+	size_t vector_size;
 #endif
 } MD_system;
 

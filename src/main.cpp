@@ -6,11 +6,13 @@
  */
 
 #include "defs.h"
-#include "CPU.h"
 #include "utils.h"
+#include "interaction.h"
 
 #ifdef CUDA
 #include "CUDA.h"
+#else
+#include "CPU.h"
 #endif
 
 #include <cstdlib>
@@ -107,6 +109,10 @@ int main(int argc, char *argv[]) {
 	// the explicit cast is there to remove a warning issued by g++
 	print_cogli1_configuration(&syst, (char *)"initial.mgl");
 
+#ifdef CUDA
+	CUDA_init(&syst);
+#endif
+
 	int step;
 	for(step = 0; step < steps; step++) {
 #ifdef CUDA
@@ -131,6 +137,11 @@ int main(int argc, char *argv[]) {
 			fprintf(stdout, "%d %lf %lf %lf\n", step, syst.U / syst.N, syst.K/ syst.N, (syst.U + syst.K) / syst.N);
 		}
 	}
+
+#ifdef CUDA
+	CUDA_to_CPU(&syst);
+	CUDA_clean(&syst);
+#endif
 
 	print_cogli1_configuration(&syst, (char *)"last.mgl");
 
