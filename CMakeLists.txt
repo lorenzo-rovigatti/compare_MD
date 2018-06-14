@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 OPTION(Debug "Set to ON to compile with debug symbols" OFF)
 OPTION(G "Set to ON to compile with optimisations and debug symbols" OFF)
@@ -40,11 +40,10 @@ MACRO(CURRENT_DATE result)
 ENDMACRO(CURRENT_DATE)
 
 CURRENT_DATE(today)
-ADD_DEFINITIONS(-D'SVN_VERSION="${revision}"' -D'BUILD_TIME="${today}"')
+ADD_DEFINITIONS(-Wall -Wshadow)
+ADD_DEFINITIONS(-D'BUILD_TIME="${today}"')
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-
-SET(exe_name compare_MD)
 
 SET(compare_MD_SOURCES
 	src/main.cpp
@@ -52,4 +51,17 @@ SET(compare_MD_SOURCES
 	src/utils.cpp
 )
 
-ADD_EXECUTABLE(${exe_name} ${compare_MD_SOURCES})
+ADD_EXECUTABLE(compare_MD ${compare_MD_SOURCES})
+
+FIND_PACKAGE(CUDA)
+IF(CUDA_FOUND)
+	# this is required when working with CUDA and newer gcc versions (> 5.4)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES")
+
+	SET(compare_MD_CUDA_SOURCES
+	src/CUDA.cu
+	)
+
+	CUDA_ADD_EXECUTABLE(compare_MD_CUDA ${compare_MD_SOURCES} ${compare_MD_CUDA_SOURCES})
+	TARGET_COMPILE_DEFINITIONS(compare_MD_CUDA PUBLIC CUDA)
+ENDIF(CUDA_FOUND)

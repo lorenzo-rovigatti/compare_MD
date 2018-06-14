@@ -26,9 +26,16 @@
 
 typedef double number;
 
+#ifdef CUDA
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+
+typedef float4 vector;
+#else
 typedef struct {
 	number x, y, z;
 } vector;
+#endif
 
 typedef struct {
 	int N;
@@ -38,6 +45,11 @@ typedef struct {
 	vector *positions;
 	vector *velocities;
 	vector *forces;
+#ifdef CUDA
+	vector *d_positions;
+	vector *d_velocities;
+	vector *d_forces;
+#endif
 } MD_system;
 
 #endif /* SRC_DEFS_H_ */

@@ -9,6 +9,10 @@
 #include "CPU.h"
 #include "utils.h"
 
+#ifdef CUDA
+#include "CUDA.h"
+#endif
+
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
@@ -105,12 +109,22 @@ int main(int argc, char *argv[]) {
 
 	int step;
 	for(step = 0; step < steps; step++) {
+#ifdef CUDA
+		CUDA_first_step(&syst);
+		CUDA_force_calculation(&syst);
+		CUDA_second_step(&syst);
+#else
 		CPU_first_step(&syst);
 		CPU_force_calculation(&syst);
 		CPU_second_step(&syst);
+#endif
 
 		if(step % THERMOSTAT_EVERY == 0) {
+#ifdef CUDA
+
+#else
 			CPU_thermalise(&syst);
+#endif
 		}
 
 		if(step % PRINT_ENERGY_EVERY == 0) {
