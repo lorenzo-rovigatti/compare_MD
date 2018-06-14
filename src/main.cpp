@@ -6,29 +6,15 @@
  */
 
 #include "defs.h"
+#include "CPU.h"
+#include "utils.h"
 
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
 
-int LJ_interaction(number r_sqr, number *energy, number *force_module_over_r) {
-	if(r_sqr > SQR(RCUT)) {
-		*energy = *force_module_over_r = 0.;
-		return NO_OVERLAP;
-	}
-	if(r_sqr < SQR(OVERLAP_THRESHOLD)) {
-		*energy = *force_module_over_r = 0.;
-		return OVERLAP;
-	}
-
-	number lj_part = 1. / CUB(r_sqr);
-	*energy = 4 * (SQR(lj_part) - lj_part);
-	*force_module_over_r = -4 * (lj_part - 2 * SQR(lj_part)) / r_sqr;
-
-	return NO_OVERLAP;
-}
-
 void init_configuration(MD_system *syst) {
+	// initialise the positions
 	int i = 0;
 	for(i = 0; i < syst->N; i++) {
 		int done = 0;
@@ -65,6 +51,14 @@ void init_configuration(MD_system *syst) {
 			fprintf(stderr, "Inserted %d%% of the particles (%d/%d)\n", i*100/syst->N, i, syst->N);
 		}
 	}
+
+	// extract the velocities from a Maxwell-Boltzmann
+	number rescale_factor = sqrt(TEMPERATURE);
+	for(i = 0; i < syst->N; i++) {
+		syst->velocities[i].x = rescale_factor * gaussian();
+		syst->velocities[i].y = rescale_factor * gaussian();
+		syst->velocities[i].z = rescale_factor * gaussian();
+	}
 }
 
 void print_cogli1_configuration(MD_system *syst, char *filename) {
@@ -85,7 +79,7 @@ void print_cogli1_configuration(MD_system *syst, char *filename) {
 
 int main(int argc, char *argv[]) {
 	if(argc < 3) {
-		fprintf(stderr, "Usage is %s N density [sim_type]\n", argv[0]);
+		fprintf(stderr, "Usage is %s N density [steps=100000]\n", argv[0]);
 		exit(1);
 	}
 
@@ -96,14 +90,35 @@ int main(int argc, char *argv[]) {
 	syst.N = atoi(argv[1]);
 	number density = atof(argv[2]);
 	syst.box_side = pow(syst.N / density, 1./3.);
+	int steps = 100000;
+	if(argc > 3) {
+		steps = atoi(argv[3]);
+	}
 
-	syst.positions = (vector *) malloc(sizeof(vector) * syst.N);
-	syst.velocities = (vector *) malloc(sizeof(vector) * syst.N);
-	syst.forces = (vector *) malloc(sizeof(vector) * syst.N);
+	syst.positions = (vector *) calloc(syst.N, sizeof(vector));
+	syst.velocities = (vector *) calloc(syst.N, sizeof(vector));
+	syst.forces = (vector *) calloc(syst.N, sizeof(vector));
 
 	init_configuration(&syst);
 	// the explicit cast is there to remove a warning issued by g++
 	print_cogli1_configuration(&syst, (char *)"initial.mgl");
+
+	int step;
+	for(step = 0; step < steps; step++) {
+		CPU_first_step(&syst);
+		CPU_force_calculation(&syst);
+		CPU_second_step(&syst);
+
+		if(step % THERMOSTAT_EVERY == 0) {
+			CPU_thermalise(&syst);
+		}
+
+		if(step % PRINT_ENERGY_EVERY == 0) {
+			fprintf(stdout, "%d %lf %lf %lf\n", step, syst.U / syst.N, syst.K/ syst.N, (syst.U + syst.K) / syst.N);
+		}
+	}
+
+	print_cogli1_configuration(&syst, (char *)"last.mgl");
 
 	free(syst.forces);
 	free(syst.velocities);

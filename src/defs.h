@@ -15,9 +15,14 @@
 #define NO_OVERLAP 0
 #define OVERLAP 1
 
+// Simulation parameters
 #define RCUT 2.5
-#define OVERLAP_THRESHOLD 0.95
+#define OVERLAP_THRESHOLD 0.9
 #define TEMPERATURE 1.0
+#define DT 0.001
+#define THERMOSTAT_PT 0.1
+#define THERMOSTAT_EVERY 537
+#define PRINT_ENERGY_EVERY 100
 
 typedef double number;
 
@@ -28,6 +33,8 @@ typedef struct {
 typedef struct {
 	int N;
 	number box_side;
+	number U;
+	number K;
 	vector *positions;
 	vector *velocities;
 	vector *forces;
