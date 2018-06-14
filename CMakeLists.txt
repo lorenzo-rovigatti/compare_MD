@@ -47,7 +47,7 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(exe_name compare_MD)
 
 SET(compare_MD_SOURCES
-	src/main.c
+	src/main.cpp
 )
 
 ADD_EXECUTABLE(${exe_name} ${compare_MD_SOURCES})

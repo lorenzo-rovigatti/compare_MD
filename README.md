@@ -21,5 +21,4 @@ The compare_MD executable will be placed in the `build/bin` folder.
 ## Notes
 
 * We do not subtract the cut-off energy
-* The RNG seed is set so that all results are reproducible.
-
+* The RNG seed is set to a constant so that all results are reproducible.

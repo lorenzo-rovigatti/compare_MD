@@ -7,9 +7,9 @@
 
 #include "defs.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cmath>
 
 int LJ_interaction(number r_sqr, number *energy, number *force_module_over_r) {
 	if(r_sqr > SQR(RCUT)) {
@@ -47,9 +47,9 @@ int main(int argc, char *argv[]) {
 	number density = atof(argv[2]);
 	number box_side = pow(N / density, 1./3.);
 
-	vector *positions = malloc(sizeof(vector) * N);
-	vector *velocities = malloc(sizeof(vector) * N);
-	vector *forces = malloc(sizeof(vector) * N);
+	vector *positions = (vector *) malloc(sizeof(vector) * N);
+	vector *velocities = (vector *) malloc(sizeof(vector) * N);
+	vector *forces = (vector *) malloc(sizeof(vector) * N);
 
 	init_configuration(N, box_side, positions);
 
