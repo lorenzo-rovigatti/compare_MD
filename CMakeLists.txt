@@ -66,4 +66,10 @@ IF(CUDA_FOUND)
 
 	CUDA_ADD_EXECUTABLE(compare_MD_CUDA ${compare_MD_SOURCES} ${compare_MD_CUDA_SOURCES} OPTIONS -DCUDA)
 	TARGET_COMPILE_DEFINITIONS(compare_MD_CUDA PUBLIC CUDA)
+	
+	IF(CUDA_VERSION_MAJOR GREATER 7)
+		SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -use_fast_math --compiler-options "-ffast-math -O3" -Xcudafe "--diag_suppress=unrecognized_gcc_pragma")
+	ELSE()
+		SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -arch=sm_20 -use_fast_math --compiler-options "-ffast-math -O3" -Xcudafe "--diag_suppress=unrecognized_gcc_pragma")
+	ENDIF(CUDA_VERSION_MAJOR GREATER 7)
 ENDIF(CUDA_FOUND)

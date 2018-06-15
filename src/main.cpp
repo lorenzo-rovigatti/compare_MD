@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	srand48(13245124);
+	srand48(SEED);
 
 	MD_system syst;
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
 		if(step % THERMOSTAT_EVERY == 0) {
 #ifdef CUDA
-
+			CUDA_thermalise(&syst);
 #else
 			CPU_thermalise(&syst);
 #endif

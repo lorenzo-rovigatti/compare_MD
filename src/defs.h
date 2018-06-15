@@ -16,9 +16,10 @@
 #define OVERLAP 1
 
 // Simulation parameters
+#define SEED 13245124
 #define RCUT 2.5
 #define OVERLAP_THRESHOLD 0.9
-#define TEMPERATURE 1.0
+#define TEMPERATURE 1.5
 #define DT 0.001
 #define THERMOSTAT_PT 0.1
 #define THERMOSTAT_EVERY 537
@@ -29,6 +30,7 @@ typedef double number;
 #ifdef CUDA
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <curand_kernel.h>
 
 typedef float4 vector;
 #else
@@ -49,6 +51,7 @@ typedef struct {
 	vector *d_positions;
 	vector *d_velocities;
 	vector *d_forces;
+	curandState *d_curand_states;
 	int kernel_threads_per_block;
 	dim3 kernel_blocks;
 	size_t vector_size;

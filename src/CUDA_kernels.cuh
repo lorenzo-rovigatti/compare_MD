@@ -2,6 +2,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <curand_kernel.h>
 
 #include <cstdio>
 
@@ -75,6 +76,40 @@ __global__ void force_calculation_kernel(vector *positions, vector *forces) {
 	}
 
 	forces[IND] = F;
+}
+
+__global__ void setup_curand(curandState *rand_state) {
+	if(IND >= MD_N[0]) return;
+
+	curand_init(SEED, IND, 0, &rand_state[IND]);
+}
+
+// here we extract 3 numbers from a Gaussian using the Box-Muller transformation
+__forceinline__ __device__ vector get_new_velocity(curandState &state, number rescale_factor) {
+	vector v_new;
+
+	number r = sqrtf(-2. * logf(curand_uniform(&state)));
+	number phi = 2.f * (number) M_PI * curand_uniform(&state);
+	v_new.x = r * cosf(phi) * rescale_factor;
+	v_new.y = r * sinf(phi) * rescale_factor;
+
+	r = sqrtf(-2. * logf(curand_uniform(&state)));
+	phi = 2.f * (number) M_PI * curand_uniform(&state);
+	v_new.z = r * cosf(phi) * rescale_factor;
+
+	v_new.w = 0.5f * DOT(v_new, v_new);
+
+	return v_new;
+}
+
+__global__ void thermostat_kernel(vector *velocities, curandState *rand_state, number rescale_factor) {
+	if(IND >= MD_N[0]) return;
+
+	curandState state = rand_state[IND];
+
+	if(curand_uniform(&state) < THERMOSTAT_PT) {
+		velocities[IND] = get_new_velocity(state, rescale_factor);
+	}
 }
 
 __global__ void second_step_kernel(vector *velocities, vector *forces) {

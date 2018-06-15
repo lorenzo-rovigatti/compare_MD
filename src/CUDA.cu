@@ -38,13 +38,19 @@ void CUDA_init(MD_system *syst) {
 	fprintf(stderr, "CUDA threads per block: %d\n", syst->kernel_threads_per_block);
 	fprintf(stderr, "CUDA blocks: (%d, %d, %d)\n", syst->kernel_blocks.x, syst->kernel_blocks.y, syst->kernel_blocks.z);
 
+	// copy some simulation constants to the GPU memory
+	cudaMemcpyToSymbol(MD_N, &syst->N, sizeof(int));
+	cudaMemcpyToSymbol(MD_box_side, &syst->box_side, sizeof(number));
+
 	syst->vector_size = sizeof(vector) * syst->N;
 	cudaMalloc((void **)&syst->d_positions, syst->vector_size);
 	cudaMalloc((void **)&syst->d_velocities, syst->vector_size);
 	cudaMalloc((void **)&syst->d_forces, syst->vector_size);
-
-	cudaMemcpyToSymbol(MD_N, &syst->N, sizeof(int));
-	cudaMemcpyToSymbol(MD_box_side, &syst->box_side, sizeof(number));
+	cudaMalloc((void **)&syst->d_curand_states, syst->N * sizeof(curandState));
+	// initialise the PRNG
+	setup_curand
+		<<<syst->kernel_blocks, syst->kernel_threads_per_block>>>
+		(syst->d_curand_states);
 
 	CPU_to_CUDA(syst);
 }
@@ -53,6 +59,7 @@ void CUDA_clean(MD_system *syst) {
 	cudaFree(&syst->d_positions);
 	cudaFree(&syst->d_velocities);
 	cudaFree(&syst->d_forces);
+	cudaFree(&syst->d_curand_states);
 }
 
 void CUDA_to_CPU(MD_system *syst) {
@@ -96,7 +103,11 @@ void CUDA_force_calculation(MD_system *syst) {
 }
 
 void CUDA_thermalise(MD_system *syst) {
-
+	number rescale_factor = sqrt(TEMPERATURE);
+	thermostat_kernel
+		<<<syst->kernel_blocks, syst->kernel_threads_per_block>>>
+		(syst->d_velocities, syst->d_curand_states, rescale_factor);
+		CHECK_CUDA_ERROR("force_calculation error");
 }
 
 void CUDA_second_step(MD_system *syst) {
