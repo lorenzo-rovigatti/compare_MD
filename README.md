@@ -20,6 +20,12 @@ make -j4
 
 At the end of the compilation stage the `compare_MD` executable can be found in the `build/bin` folder. If CUDA libraries are found by `cmake`, then the `compare_MD_CUDA` will be compiled as well.
 
+## Output
+
+The layout of the lines printed to the standard output is `step U K T`, where the last three are the potential, kinetic and total energy per particle, respectively.
+
+The initial and final configurations are printed in a format supported by [cogli1](https://sourceforge.net/projects/cogli1/) in the `initial.mgl` and `last.mgl` files. 
+
 ## Notes
 
 * We do not subtract the cut-off energy.

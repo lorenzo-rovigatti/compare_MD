@@ -3,6 +3,8 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#include <cstdio>
+
 /// threads per block
 #define TINBLOCK (blockDim.x*blockDim.y)
 /// thread id relative to its block

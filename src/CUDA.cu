@@ -9,6 +9,10 @@
 #include "CUDA_device_utils.h"
 #include "CUDA_kernels.cuh"
 
+#include <thrust/reduce.h>
+#include <thrust/device_ptr.h>
+#include <thrust/transform_reduce.h>
+
 #include <cstdlib>
 #include <cstdio>
 
@@ -35,9 +39,9 @@ void CUDA_init(MD_system *syst) {
 	fprintf(stderr, "CUDA blocks: (%d, %d, %d)\n", syst->kernel_blocks.x, syst->kernel_blocks.y, syst->kernel_blocks.z);
 
 	syst->vector_size = sizeof(vector) * syst->N;
-	cudaMalloc(&syst->d_positions, syst->vector_size);
-	cudaMalloc(&syst->d_velocities, syst->vector_size);
-	cudaMalloc(&syst->d_forces, syst->vector_size);
+	cudaMalloc((void **)&syst->d_positions, syst->vector_size);
+	cudaMalloc((void **)&syst->d_velocities, syst->vector_size);
+	cudaMalloc((void **)&syst->d_forces, syst->vector_size);
 
 	cudaMemcpyToSymbol(MD_N, &syst->N, sizeof(int));
 	cudaMemcpyToSymbol(MD_box_side, &syst->box_side, sizeof(number));
@@ -63,6 +67,17 @@ void CPU_to_CUDA(MD_system *syst) {
 	cudaMemcpy(syst->d_forces, syst->forces, syst->vector_size, cudaMemcpyHostToDevice);
 }
 
+struct vector_to_double {
+	__device__ double operator()(const vector &a) {
+		return (double) a.w;
+	}
+};
+
+number sum_fourth_component(vector *d_array, int N) {
+	thrust::device_ptr<vector> t_dv = thrust::device_pointer_cast(d_array);
+	return thrust::transform_reduce(t_dv, t_dv + N, vector_to_double(), 0., thrust::plus<double>());
+}
+
 void CUDA_first_step(MD_system *syst) {
 	first_step_kernel
 		<<<syst->kernel_blocks, syst->kernel_threads_per_block>>>
@@ -75,6 +90,9 @@ void CUDA_force_calculation(MD_system *syst) {
 		<<<syst->kernel_blocks, syst->kernel_threads_per_block>>>
 		(syst->d_positions, syst->d_forces);
 		CHECK_CUDA_ERROR("force_calculation error");
+
+	// we divide by two since we don't use Netwon's third law
+	syst->U = sum_fourth_component(syst->d_forces, syst->N) / 2.;
 }
 
 void CUDA_thermalise(MD_system *syst) {
@@ -86,4 +104,6 @@ void CUDA_second_step(MD_system *syst) {
 		<<<syst->kernel_blocks, syst->kernel_threads_per_block>>>
 		(syst->d_velocities, syst->d_forces);
 		CHECK_CUDA_ERROR("second_step error");
+
+	syst->K = sum_fourth_component(syst->d_velocities, syst->N);
 }
